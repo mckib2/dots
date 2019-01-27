@@ -1,0 +1,19 @@
+.selected {
+    /* background-color: red !important */
+
+}
+
+.pulse {
+    /* !important to overrule jsPlumb css */
+    animation-name: pulse_animation !important;
+    animation-duration: 750ms !important;
+    animation-iteration-count: infinite !important;
+    animation-timing-function: linear;
+    animation-direction: alternate;
+
+}
+
+@keyframes pulse_animation {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.2); }
+}
