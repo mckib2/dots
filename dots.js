@@ -1,3 +1,7 @@
+// Find the container to hold the score
+let scoreWindow = document.getElementById('score-window');
+let scoreField = document.getElementById('cur-score');
+scoreField.innerHTML = '0';
 
 // Find the container to hold the entire game in
 let dotsWindow = document.getElementById('dots-window');
@@ -25,6 +29,21 @@ document.addEventListener('mouseup', function(ev) {
     // Kaplooy went the dots!
     if (dotChain.length > 1) {
 
+        // See if we got a square:
+        if (isSquare()) {
+
+            // If we got a square, then all of that color goes kaplooy!
+            let curColor = document.getElementById(dotChain[0]).style.backgroundColor;
+            dotChain = [];
+            for(ii = 0; ii < myMap.rows; ++ii) {
+                for(jj = 0; jj < myMap.cols; ++jj) {
+                    if (document.getElementById(ii + '-' + jj).style.backgroundColor === curColor) {
+                        dotChain.push(ii + '-' + jj);
+                    }
+                }
+            }
+        }
+
         // Travel from bottom to top up each column and tell each dot how far
         // it needs to travel based on encountered holes
         for (jj = myMap.cols - 1; jj >= 0; --jj) {
@@ -51,11 +70,9 @@ document.addEventListener('mouseup', function(ev) {
         }
     }
 
-    // Re-ID the dots since the grid is all messed up...
-    for (ii = 0; ii < myMap.rows; ++ii) {
-        for (jj = 0; jj < myMap.cols; ++jj) {
-
-        }
+    // Award points
+    if (dotChain.length > 1) {
+        scoreField.innerHTML = parseInt(scoreField.innerHTML, 10) + dotChain.length;
     }
 
     // Clear out the chain for next move
@@ -83,6 +100,16 @@ resizeGame(dotsWidth, dotsHeight);
 
 // Fill in the map
 fillMap(myMap);
+
+function isSquare() {
+    // Determine if current dotChain forms a square
+    if (dotChain.length === 4) {
+        return(true);
+    }
+    else {
+        return(false);
+    }
+}
 
 function resizeGame(width, height) {
     dotsWindow.style.width = width + 'px';
@@ -116,12 +143,23 @@ function letDotFall(el, numToFall) {
 
 function selectDot(el,connection=true) {
 
+    // Detect duplicate element
     if (dotChain.indexOf(el.id) !== -1) {
         return;
     }
 
     // Add it to the chain
-    dotChain.push(el.id)
+    dotChain.push(el.id);
+
+    // If the new chain is now a square, we want to highlight all the same-
+    // colored dots
+    if (isSquare()) {
+        addSquareExtraSelections();
+    }
+    else {
+        // Make sure we don't errantly highlight dots we don't want to
+        removeSquareExtraSelections();
+    }
 
     // Mark selected dots
     addSelectedClasses(el);
@@ -135,9 +173,44 @@ function selectDot(el,connection=true) {
 }
 
 function unselectDot(el) {
+
+    // If the chain is currently a square, it soon won't be...
+    if (isSquare()) {
+        removeSquareExtraSelections();
+    }
+
+    // Remove the unselected dot and associated connections
     dotChain.pop();
     removeSelectedClasses(el);
     jsPlumb.deleteConnectionsForElement(el);
+
+    // If the new chain is a square, add the rest of the same colored dots
+    if (isSquare()) {
+        addSquareExtraSelections();
+    }
+}
+
+function addSquareExtraSelections() {
+    // If we got a square, then select all the same colored dots
+    let curColor = document.getElementById(dotChain[0]).style.backgroundColor;
+    for(ii = 0; ii < myMap.rows; ++ii) {
+        for(jj = 0; jj < myMap.cols; ++jj) {
+            if (document.getElementById(ii + '-' + jj).style.backgroundColor === curColor) {
+                addSelectedClasses(document.getElementById(ii + '-' + jj));
+            }
+        }
+    }
+}
+function removeSquareExtraSelections() {
+    let curColor = document.getElementById(dotChain[0]).style.backgroundColor;
+    for(ii = 0; ii < myMap.rows; ++ii) {
+        for(jj = 0; jj < myMap.cols; ++jj) {
+            let el = document.getElementById(ii + '-' + jj);
+            if ((el.style.backgroundColor === curColor) && (dotChain.indexOf(el.id) === -1)) {
+                removeSelectedClasses(el);
+            }
+        }
+    }
 }
 
 function addSelectedClasses(el) {
